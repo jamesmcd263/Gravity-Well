@@ -50,15 +50,13 @@ def particleLines(toPrint):
             xVel = 0
             yVel = 0
             colored = False
-            toPrint[(X*800)+Y, 0] = X
-            toPrint[(X*800)+Y, 1] = Y
             while not colored:
                 for i in range(len(Positions)):
                     dist = ((((Positions[i, 0] - x) ** 2) + ((Positions[i, 1] - y) ** 2)) ** 0.5)
                     if dist < Sizes[i]:
-                        toPrint[(X*800)+Y, 2] = Colors[i, 0] * 0.5
-                        toPrint[(X*800)+Y, 3] = Colors[i, 1] * 0.5
-                        toPrint[(X*800)+Y, 4] = Colors[i, 2] * 0.5
+                        toPrint[(X*800)+Y, 0] = Colors[i, 0] * 0.5
+                        toPrint[(X*800)+Y, 1] = Colors[i, 1] * 0.5
+                        toPrint[(X*800)+Y, 2] = Colors[i, 2] * 0.5
                         colored = True
                     else:
                         accel = (Charges[i] * K) / (dist ** 2)
@@ -77,8 +75,8 @@ background = pygame.Surface((1600, 800))
 Particles = []
 
 particleLines(toPrint)
-for i in toPrint:
-    background.set_at((int(i[0]), int(i[1])), (int(i[2]), int(i[3]), int(i[4])))
+for i in range(1280000):
+    background.set_at((int(i/800), (i%800)), ((toPrint[i,0]), toPrint[i,1], toPrint[i,2]))
 
 for i in range(Positions.shape[0]):
     pygame.draw.circle(background, Colors[i].astype(int), Positions[i].astype(int), int(Sizes[i]))
@@ -92,7 +90,8 @@ while running:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                Particles.append([event.pos[0], event.pos[1], 0, 0, True])
+                Particles.append([event.pos[0], event.pos[1], 0, 0, True, 
+                                  ((toPrint[(event.pos[0]*800) + event.pos[1]])[0] * 2, (toPrint[(event.pos[0]*800) + event.pos[1]])[1] * 2, (toPrint[(event.pos[0]*800) + event.pos[1]])[2] * 2)])
     
     screen.blit(background, (0,0))
 
@@ -100,7 +99,7 @@ while running:
         for i in range(len(Positions)):
             if Particles[p][4]:
                 dist = ((((Positions[i][0] - Particles[p][0]) ** 2) + ((Positions[i][1] - Particles[p][1]) ** 2)) ** 0.5)
-                pygame.draw.circle(screen, (0,0,0), (Particles[p][0], Particles[p][1]), 5)
+                pygame.draw.circle(screen, Particles[p][5], (Particles[p][0], Particles[p][1]), 5)
                 if dist < Sizes[i]:
                     Particles[p][4] = False
                 else:
