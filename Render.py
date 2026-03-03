@@ -5,8 +5,11 @@ from numba import njit
 import numpy as np
 
 K = 3
+drag = 0.99999999
+scaleTimeSpan = 10000
+scaled = False
 
-toPrint = np.zeros((1280000, 5))
+toPrint = np.zeros((1280000, 3))
 
 class Planet:
     def __init__(self, pos, charge, color):
@@ -16,12 +19,12 @@ class Planet:
         self.color = color
 
                     #(xPos,yPos),charge,(color)
-Planets = [Planet([700, 200],  100,  [255,0,0]),
-           Planet([900, 250],  70,   [255,255,0]),
-           Planet([600, 400],  100,  [0,255,0]),
-           Planet([1000, 400], 20,   [0,0,255]),
-           Planet([700, 550],  110,  [0,255,255]),
-           Planet([900, 600],  50,   [255,0,255])]
+Planets = [Planet([400, 500],  200,  [255,0,0]),
+           #Planet([800, 400],  -80,   [255,255,0]),
+           Planet([600, 400],  150,  [0,255,0]),
+           Planet([1200, 600], 250,   [0,0,255]),
+           Planet([700, 550],  350,  [0,255,255]),
+           Planet([800, 200],  305,   [255,0,255])]
 
 Positions = []
 Charges = []
@@ -39,6 +42,8 @@ Charges = np.array(Charges, dtype=np.float64)
 Sizes = np.array(Sizes, dtype=np.float64)
 Colors = np.array(Colors, dtype=np.float64)
 
+
+
 @njit
 def particleLines(toPrint):
     for X in range(1600):
@@ -50,20 +55,27 @@ def particleLines(toPrint):
             xVel = 0
             yVel = 0
             colored = False
+            time = 0
             while not colored:
+                time += 1
                 for i in range(len(Positions)):
                     dist = ((((Positions[i, 0] - x) ** 2) + ((Positions[i, 1] - y) ** 2)) ** 0.5)
                     if dist < Sizes[i]:
-                        toPrint[(X*800)+Y, 0] = Colors[i, 0] * 0.5
-                        toPrint[(X*800)+Y, 1] = Colors[i, 1] * 0.5
-                        toPrint[(X*800)+Y, 2] = Colors[i, 2] * 0.5
+                        scale = 1
+                        if scaled:
+                            if time > scaleTimeSpan:
+                                time = scaleTimeSpan
+                            scale = time / scaleTimeSpan
+                        toPrint[(X*800)+Y, 0] = Colors[i, 0] * scale * 0.5
+                        toPrint[(X*800)+Y, 1] = Colors[i, 1] * scale * 0.5
+                        toPrint[(X*800)+Y, 2] = Colors[i, 2] * scale * 0.5
                         colored = True
                     else:
                         accel = (Charges[i] * K) / (dist ** 2)
                         xVel += accel * (Positions[i, 0] - x) / (dist*10)
                         yVel += accel * (Positions[i, 1] - y) / (dist*10)
-                xVel *= 0.99999
-                yVel *= 0.99999
+                xVel *= drag
+                yVel *= drag
                 x += xVel
                 y += yVel
 
@@ -76,7 +88,7 @@ Particles = []
 
 particleLines(toPrint)
 for i in range(1280000):
-    background.set_at((int(i/800), (i%800)), ((toPrint[i,0]), toPrint[i,1], toPrint[i,2]))
+    background.set_at((int(i/800), i%800), (int(toPrint[i, 0]), int(toPrint[i, 1]), int(toPrint[i, 2])))
 
 for i in range(Positions.shape[0]):
     pygame.draw.circle(background, Colors[i].astype(int), Positions[i].astype(int), int(Sizes[i]))
@@ -90,8 +102,9 @@ while running:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
+                toPrintID = (event.pos[0]*800) + event.pos[1]
                 Particles.append([event.pos[0], event.pos[1], 0, 0, True, 
-                                  ((toPrint[(event.pos[0]*800) + event.pos[1]])[0] * 2, (toPrint[(event.pos[0]*800) + event.pos[1]])[1] * 2, (toPrint[(event.pos[0]*800) + event.pos[1]])[2] * 2)])
+                                  (int(toPrint[toPrintID, 0] * 2), int(toPrint[toPrintID, 1] * 2), int(toPrint[toPrintID, 2] * 2))])
     
     screen.blit(background, (0,0))
 
@@ -106,8 +119,8 @@ while running:
                     accel = (Charges[i] * K) / (dist ** 2)
                     Particles[p][2] += accel * (Positions[i][0] - Particles[p][0]) / (dist*10)
                     Particles[p][3] += accel * (Positions[i][1] - Particles[p][1]) / (dist*10)
-        Particles[p][2] *= 0.99999
-        Particles[p][3] *= 0.99999
+        Particles[p][2] *= drag
+        Particles[p][3] *= drag
         Particles[p][0] += Particles[p][2]
         Particles[p][1] += Particles[p][3]
         if not Particles[p][4]:
