@@ -1,5 +1,5 @@
 This program aims to replicate what was done in 2Swaps' YouTube video [༄ GRAVITY BASINS ࿐](https://www.youtube.com/watch?v=LavXSS5Xtbg)
-Note that the files WellField1.png up through WellField10 serve to document my iterative process when coding this
+Note that the files WellField1.png up through WellField10.png serve to document my iterative process when coding this
 
 # **Concept Description:**
   There are multiple gravitational bodies spread out across the screen each with a different color, every
